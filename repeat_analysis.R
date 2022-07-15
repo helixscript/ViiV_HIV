@@ -216,10 +216,11 @@ a$posid <- 'multiHit'
 b <- select(sites, GTSP, multiHitID, posid, class) %>% dplyr::rename(sample = GTSP)
 b$class2 <- unlist(lapply(b$class, classifyRepeat))
 
+
+# Build table that will be used to create the final count and frequency tables.
 tab <- bind_rows(a, b)
 
 tab[which(tab$class2 == 'Not clear'),]$class2 <- 'Other'
-
 
 tab$group <- 'None'
 tab <- bind_rows(lapply(split(groupings, groupings$V1), function(x){
@@ -228,6 +229,8 @@ tab <- bind_rows(lapply(split(groupings, groupings$V1), function(x){
          o
        }))
 
+
+# Create site count table.
 classOrder <- c('SINE/Alu', 'SINE/Other', 'LINE', 'LTR', 'Satellite/centr', 'Low complexity', 'DNA', 'Other', 'None')
 
 o <- lapply(split(tab, tab$group), function(x){
@@ -244,7 +247,7 @@ row.names(countsTable) <- classOrder
 openxlsx::write.xlsx(countsTable, 'countTable.xlsx', rowNames = TRUE)
 
 
-
+# Create site frequency table.
 o <- lapply(split(tab, tab$group), function(x){
   o <- data.frame(table(x$class2))
   m <- classOrder[! classOrder %in% o$Var1]
@@ -259,13 +262,9 @@ freqTable <- bind_cols(lapply(o, '[', 2))
 row.names(freqTable) <- classOrder
 openxlsx::write.xlsx(freqTable, 'freqTable.xlsx', rowNames = TRUE)
 
+
+# Create site annoation table.
 tab2 <- left_join(tab, select(sites.repeatHits, posid, seq), by = 'posid') 
 tab2$seqLen <- nchar(tab2$seq)
 tab2 <- select(tab2, sample, multiHitID, posid, class, class2, group, seqLen, seq)
-openxlsx::write.xlsx(tab2[rev(1:nrow(tab2)),], file = 'Marquis_repeat_site_annotaions.xlsx')
-
-
-
-
-
-
+openxlsx::write.xlsx(tab2[rev(1:nrow(tab2)),], file = 'repeat_site_annotaions.xlsx')
